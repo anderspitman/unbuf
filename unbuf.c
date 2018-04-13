@@ -19,17 +19,17 @@ void checkReturn(int returnCode, char *message) {
     }
 }
 
+void checkPointer(void *ptr, char *message) {
+    if (ptr == 0) {
+        error(message);
+    }
+}
+
 bool processIsChild(pid_t pid) {
     return pid == 0;
 }
 
 void runChildProcess(int ptySlaveFd, char **command, int commandLen) {
-    //printf("child: %d\n", ptySlaveFd);
-
-    //char buf[BUF_SIZE_BYTES];
-    //ssize_t readResult = -1;
-    //size_t numBytesRead = 0;
-
 
     // set child stdin, stdout, and stderr to use the pty
     close(0);
@@ -44,7 +44,6 @@ void runChildProcess(int ptySlaveFd, char **command, int commandLen) {
 }
 
 void runParentProcess(int ptyMasterFd) {
-    //printf("parent: %d\n", ptyMasterFd);
 
     char buf[BUF_SIZE_BYTES];
 
@@ -53,7 +52,8 @@ void runParentProcess(int ptyMasterFd) {
 
     while (1) {
         readResult = read(ptyMasterFd, buf, sizeof(buf) - 1);
-        //checkReturn(readResult, "parent read");
+        // TODO: might want to try to keep alive rather than assuming the
+        // child has exited
         if (readResult < 0) {
             break;
         }
@@ -63,7 +63,6 @@ void runParentProcess(int ptyMasterFd) {
         if (numBytesRead > 0) {
 
             buf[numBytesRead] = '\0';
-            //printf("parent read: %zu\n", numBytesRead);
             printf("%s", buf);
         }
     }
@@ -82,8 +81,10 @@ int main(int argc, char **argv) {
     returnCode = unlockpt(ptyMasterFd);
     checkReturn(returnCode, "unlockpt");
 
-    // TODO: check return value
-    int ptySlaveFd = open(ptsname(ptyMasterFd), O_RDWR);
+    char *ptyFilePath = ptsname(ptyMasterFd);
+    checkPointer(ptyFilePath, "pty file path");
+
+    int ptySlaveFd = open(ptyFilePath, O_RDWR);
     checkReturn(ptySlaveFd, "open slave pty");
 
     pid_t processId = fork();
