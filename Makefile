@@ -1,15 +1,12 @@
-#CC := clang
 CC := musl-clang
-#CFLAGS := -std=c99 -Wall
+#CC := clang
+#CC := gcc
 CFLAGS := -static -std=c99 -Wall
+#CFLAGS := -std=c99 -Wall
 SRC := unbuf.c
 
 unbuf: $(SRC)
 	$(CC) $(CFLAGS) -o unbuf $(SRC)
-
-.PHONY: watch
-watch:
-	ls $(SRC) | entr make
 
 .PHONY: clean
 clean:
